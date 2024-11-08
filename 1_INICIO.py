@@ -74,6 +74,12 @@ def get_unique_words_from_column(df, column_name):
     unique_words = list(set(all_words))
     return unique_words
 
+plantas_list["Nombre total"] = plantas_list["Nombre vulgar"].fillna('') + " (" + plantas_list["Nombre Científico"].fillna('') + ")"
+
+
+
+
+
 plantas_filtradas = plantas_list.copy()
 
 # FILTERS
@@ -109,26 +115,80 @@ if propiedades_seleccion:
 
 # Display the filtered DataFrame
 st.write("#### Resultados")
-st.dataframe(plantas_filtradas_3)
+
+nombre_vulgar_selection_words = sorted(plantas_filtradas_3['Nombre vulgar'].unique())
+nombre_total_selection_words = sorted(plantas_filtradas_3["Nombre total"].unique())
+
+
+
+
+
+def results(df, nombre_vulgar_selection_words, label="N° Plantas", variable="Nombre vulgar"): 
+    # Count the number of plants based on the selection criteria
+    n_plantas = df[variable].count()
+    # Convert the count to a string and create a single-line list of selected words
+    markdown_list = ', '.join(nombre_vulgar_selection_words)
+    
+    # Create the result text
+    result_text = f"Hay {n_plantas} plantas que cumplen con tu criterio de selección : {markdown_list}"
+    
+    # Display in two columns
+    col1, col2 = st.columns([0.3, 1.7])
+    
+    if n_plantas != 175:
+        with col1:
+            # Display the metric
+            st.metric(
+                label=label,
+                value=n_plantas
+            )
+
+        with col2:
+            # Display the result text
+            st.success(result_text)
+    
+    else:
+        with col1:
+            # Display the metric
+            st.metric(
+                label=label,
+                value=n_plantas
+            )
+
+        with col2:
+            st.info("Usa las herramientas de filtro para explorar plantas")
+    
+        
+
+results(plantas_filtradas_3, nombre_vulgar_selection_words, label="N° Plantas", variable="Nombre vulgar")
+
+
+
+
+# Display the filtered DataFrame
+st.dataframe(plantas_filtradas_3,
+            hide_index=True
+        )
+
 
 
 st.write("#### Detalle de Planta")
-# FILTER 4: by "Nombre vulgar"
-nombre_vulgar_selection_words = sorted(plantas_filtradas_3['Nombre vulgar'].unique())
-nombre_vulgar_selection = st.selectbox("Planta específica para leer en detalle", ["Selecciona una planta"] + nombre_vulgar_selection_words)
 
-# Filter by "Nombre vulgar" if a selection is made
+# FILTER 4: by "Nombre total"
+nombre_vulgar_selection = st.selectbox("Planta específica para leer en detalle", ["Selecciona una planta"] + nombre_total_selection_words)
+
+# Filter by "Nombre total" if a selection is made
 if nombre_vulgar_selection != "Selecciona una planta":
-    plantas_filtradas_4 = plantas_filtradas_3[plantas_filtradas_3['Nombre vulgar'] == nombre_vulgar_selection]
+    plantas_filtradas_4 = plantas_filtradas_3[plantas_filtradas_3["Nombre total"] == nombre_vulgar_selection]
 
-    # Check if there is data to display for the selected "Nombre vulgar"
+    # Check if there is data to display for the selected "Nombre total"
     if not plantas_filtradas_4.empty:
         # Iterate over each row in the filtered DataFrame to display detailed information
         for idx, row in plantas_filtradas_4.iterrows():
-            st.markdown(f"### Detalles de la Planta: {row['Nombre vulgar']}")
+            st.markdown(f"### Detalles de la Planta: {row['Nombre total']}")
             for column_name, value in row.items():
-                if column_name == 'Nombre vulgar':
-                    continue  # Skip displaying the "Nombre vulgar" itself
+                if column_name == "Nombre total":
+                    continue  # Skip displaying the "Nombre total" itself
                 # Check for missing or empty values
                 display_value = value if pd.notna(value) and value != "" else "Información no disponible"
                 # Display each field with its column name as a label
@@ -137,5 +197,4 @@ if nombre_vulgar_selection != "Selecciona una planta":
     else:
         st.write("No hay información disponible")
 else:
-    st.write("")
-    # st.write("Por favor selecciona una planta para explorar más")
+    st.write("Por favor selecciona una planta para explorar más")
